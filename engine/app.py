@@ -12,7 +12,8 @@ from time import sleep
 from typing import Dict, List, Tuple, Union, TypedDict, Literal
 
 DATA_POLL_INTERVAL = 0.1  # Interval (seconds) to check for new data pieces, adapt if necessary
-TERMINAL_WAIT = 10  # Time (seconds) to wait before final shutdown, to allow the controller to pick up the newest progress etc.
+TERMINAL_WAIT = 10  # Time (seconds) to wait before final shutdown, to allow the controller to pick up the newest
+# progress etc.
 TRANSITION_WAIT = 1  # Time (seconds) to wait between state transitions
 
 
@@ -51,7 +52,49 @@ class SMPCType(TypedDict):
 
 
 class App:
+    """ Implementing the workflow for FeatureCloud platform
 
+    Attributes
+    ----------
+    id: str
+    coordinator: bool
+    clients: list
+
+    status_available: bool
+    status_finished: bool
+    status_message: str
+    status_progress: float
+    status_state: str
+    status_destination: str
+    status_smpc: dict
+
+    default_smpc: dict
+
+    data_incoming: list
+    data_outgoing: list
+    thread:
+
+    states: Dict[str, AppState]
+    transitions: Dict[str, Tuple[AppState, AppState, bool, bool]]
+    transition_log: List[Tuple[datetime.datetime, str]]
+    internal: dict
+
+    current_state: str
+
+
+    Methods
+    -------
+    handle_setup(client_id, coordinator, clients)
+    handle_incoming(data)
+    handle_outgoing()
+    guarded_run()
+    run()
+    register()
+    _register_state(name, state, participant, coordinator, **kwargs)
+    register_transition(name, source, participant, coordinator)
+    transition()
+    log()
+    """
     def __init__(self):
         self.id = None
         self.coordinator = None
@@ -89,7 +132,17 @@ class App:
                 pass
 
     def handle_setup(self, client_id, coordinator, clients):
-        # This method is called once upon startup and contains information about the execution context of this instance
+        """ is called once upon startup and contains information about the execution context of this instance.
+            and registers all of the the states.
+
+
+        Parameters
+        ----------
+        client_id: str
+        coordinator: bool
+        clients: list
+
+        """
         self.id = client_id
         self.coordinator = coordinator
         self.clients = clients
@@ -107,6 +160,9 @@ class App:
         self.thread.start()
 
     def guarded_run(self):
+        """ run the workflow while trying to catch possible exceptions
+
+        """
         try:
             self.run()
         except Exception as e:  # catch all  # noqa
@@ -116,6 +172,11 @@ class App:
             self.status_finished = True
 
     def run(self):
+        """    Runs the workflow, logs the current state, executes it,
+               and handles the transition to the next desired state.
+               once the app transits to the terminal state, the workflow will be terminated.
+
+       """
         while True:
             self.log(f'state: {self.current_state.name}')
             transition = self.current_state.run()
@@ -130,16 +191,32 @@ class App:
             sleep(TRANSITION_WAIT)
 
     def register(self):
+        """ Registers all of the states transitions
+            it should be called once all of sates are registered.
+
+        """
         for s in self.states:
             state = self.states[s]
             state.register()
 
     def handle_incoming(self, data, client):
-        # This method is called when new data arrives
+        """ when new data arrives, it appends it to data_incoming attribute to be accessible for app states.
+
+        Parameters
+        ----------
+        data: list
+            encoded data
+        client: str
+            Id of the client that Sent the data
+
+        """
         self.data_incoming.append((data, client))
 
     def handle_outgoing(self):
-        # This method is called when data is requested
+        """ When it is requested to send some data to other client/s
+            it will be called to deliver the data to the FeatureCloud Controller.
+
+        """
         if len(self.data_outgoing) == 0:
             return None
         data = self.data_outgoing[0]
@@ -155,6 +232,16 @@ class App:
         return data[0]
 
     def _register_state(self, name, state, participant, coordinator, **kwargs):
+        """ instantiates a state, provide app level information for it, and add it as part of the app workflow.
+
+        Parameters
+        ----------
+        name: str
+        state: AppState
+        participant: bool
+        coordinator: bool
+
+        """
         if self.transitions.get(name):
             self.log(f'state {name} already exists', level=LogLevel.FATAL)
 
@@ -166,6 +253,24 @@ class App:
         self.states[si.name] = si
 
     def register_transition(self, name: str, source: str, target: str, participant=True, coordinator=True):
+        """ Receives transition registration parameters, check validity of its logic, and consider it as one
+            possible transitions in the workflow.
+            There will exceptions if apps try to register a transitions with contradicting roles.
+
+        Parameters
+        ----------
+        name: str
+            Name of the transition
+        source: str
+            Name of the source state
+        target: str
+            Name of the target state
+        participant: bool
+            Indicates whether the transition is allowed for participant role
+        coordinator: bool
+            Indicates whether the transition is allowed for the coordinator role
+
+        """
         if not participant and not coordinator:
             self.log('either participant or coordinator must be True', level=LogLevel.FATAL)
 
@@ -191,6 +296,15 @@ class App:
         self.transitions[name] = (source_state, target_state, participant, coordinator)
 
     def transition(self, name):
+        """ Transits the app workflow to the unique next state based on current states, the role FeatureCloud client,
+            and requirements of registered transitions for current state.
+
+        Parameters
+        ----------
+        name: str
+            Name of the transition(which includes name of current and the next state)
+
+        """
         transition = self.transitions.get(name)
         if not transition:
             self.log(f'transition {name} not found', level=LogLevel.FATAL)
@@ -225,7 +339,30 @@ class App:
 
 
 class AppState(abc.ABC):
+    """ Defining custom states
 
+    Attributes:
+    -----------
+    app: App
+    name: str
+    participant: bool
+    coordinator: bool
+
+    Methods:
+    --------
+    register()
+    run()
+    register_transition(target, role, name)
+    aggregate_data(operation, use_smpc)
+    gather_data(is_json)
+    await_data(n, unwrap, is_json)
+    send_data_to_participant(data, destination)
+    configure_smpc(exponent, shards, operation, serialization)
+    send_data_to_coordinator(data, send_to_self, use_smpc)
+    broadcast_data(data, send_to_self)
+    update(message, progress, state)
+
+    """
     def __init__(self):
         self.app = None
         self.name = None
@@ -234,11 +371,20 @@ class AppState(abc.ABC):
 
     @abc.abstractmethod
     def register(self):
-        pass
+        """ This is an abstract method that should be overriden by FeatureCloud App-developers
+            it calls AppState.register_transition to register transitions for state.
+            it will be called in App.register method so that, once all states are defined,
+            in a verifiable way, all app transitions can be registered.
+
+        """
 
     @abc.abstractmethod
     def run(self) -> str:
-        pass
+        """ It is an abstract method that should be implemented by FeatureCloud app-developers,
+            to execute all local or global operation and calculations of the state.
+            It will be called in App.run() method so that the state perform its operations.
+
+        """
 
     def register_transition(self, target: str, role: Role = Role.BOTH, name: str or None = None):
         """
