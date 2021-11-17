@@ -371,7 +371,7 @@ class AppState(abc.ABC):
 
     @abc.abstractmethod
     def register(self):
-        """ This is an abstract method that should be overriden by FeatureCloud App-developers
+        """ This is an abstract method that should be implemented by developers
             it calls AppState.register_transition to register transitions for state.
             it will be called in App.register method so that, once all states are defined,
             in a verifiable way, all app transitions can be registered.
@@ -380,7 +380,7 @@ class AppState(abc.ABC):
 
     @abc.abstractmethod
     def run(self) -> str:
-        """ It is an abstract method that should be implemented by FeatureCloud app-developers,
+        """ It is an abstract method that should be implemented by developers,
             to execute all local or global operation and calculations of the state.
             It will be called in App.run() method so that the state perform its operations.
 
