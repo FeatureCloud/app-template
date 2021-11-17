@@ -72,8 +72,8 @@ example_app:
   result:
     data: data.csv
 ```
-Currently, developers should exaplin the datatype of config options and acceptable values in their app documentation, and also,
-check the values while their processing the config file. Even though each config file could include arbitrary
+Currently, developers should explain the datatype of config options and acceptable values in their app documentation, and also,
+check the values while they process the config file. Even though each config file could include arbitrary
 key/value pairs, there are  share parts can be found in all apps. Here we cover how conventionally we can cover those parts.
 
 #### Local Datasets
