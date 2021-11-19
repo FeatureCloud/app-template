@@ -15,13 +15,15 @@ FeatureCloud library provides app developers with  `AppState` and `App` classes 
 Meanwhile, it includes `ConfigState`, an optional abstract class that supports reading and interpreting the config file.
 Each app, in the FeatureCloud platform includes multiple states
 and possible transitions between the defined states. All apps will begin their workflow from the `initial` state
-and end it at the `terminal` state. Accordingly, `App` class will manage stets and transitions registeration. FeatureCloud `App` supports exactly two roles, coordinator and participant, for clients who are going to participate
+and end it at the `terminal` state. Accordingly, `App` class will manage stets and transitions registration. 
+FeatureCloud `App` supports exactly two roles, coordinator and participant, for clients who are going to participate
 in Federated execution of apps. FeatureCloud app developers are obliged to explicitly define their logic
 for the app by stipulating which roles are allowed to enter a specific state and take a particular transition.
 
 ## Roles
 In the FeatureCloud platform, clients can have two roles: coordinator and participant. These roles are not mutually exclusive.
-Meanwhile, the FeatureCloud library comes with three constant tuples to describe the eligibility of clients in terms of their role to enter and execute specific states.  Accordingly, to make it clear, we defined three role tuples, with `bool` values, 
+Meanwhile, the FeatureCloud library comes with three constant tuples to describe the eligibility of clients in terms of
+their role to enter and execute specific states.  Accordingly, to make it clear, we defined three role tuples, with `bool` values, 
 for participant and coordinator roles, as follows: 
 
 * `COORDINATOR`: indicates that only coordinator role is `True`. 
@@ -73,7 +75,9 @@ making the data noisy. Regarding the fact that noise values cannot
 be zero or negative, the Exponent should be a non-negative integer where zero practically means not using the SMPC component.
 
 ### Shards
-Each client should send out noise and noisy data to Computational Parties (CP), between two and the number of clients. Noise can be made of one or more secrete values, and clients should generate those secrete random values regarding the number of shards. For instance, once the shards are two, clients should send out one secrete value, 
+Each client should send out noise and noisy data to Computational Parties (CP), between two and the number of clients. 
+Noise can be made of one or more secrete values, and clients should generate those secrete random values regarding the
+number of shards. For instance, once the shards are two, clients should send out one secrete value, 
 and noisy data, of course, to different CPs. For three or more shards, more secrete values should be generated.
 Even though the maximum number of parties yields the best privacy-preserving results, 
 it is computationally expensive. Accordingly, `shards` is a non-negative integer, where choices are:
@@ -114,17 +118,20 @@ For registering either states or transitions, app developers must use one of the
 to declare that each role/s are responsible/allowed to execute states or take transitions. `App` class
 automatically checks the logic to ensure semantic errors in defining the workflow are minimized.
 
-Each app should contain and start with an `initial` state. On the other hand, each app, by default, contains the `terminal` state that has no task or operation to accomplish other than explicitly
+Each app should contain and start with an `initial` state. On the other hand, each app, by default, contains 
+the `terminal` state that has no task or operation to accomplish other than explicitly
 marking the final state in the app. Once a state transitions to the `terminal` state, that state should be considered one of the app's possible exit states.
 
 
 ### Status Attributes
 When the app instance is running, different errors may happen, or various results may be produced. Thereby, the app instance may need
-to communicate with the controller or front-end parts of FeatureCloud. Accordingly, developers can use status attributes in the `App` class to send messages between the app container to the controller and/or indirectly with the front-end.
+to communicate with the controller or front-end parts of FeatureCloud. Accordingly, developers can use status 
+attributes in the `App` class to send messages between the app container to the controller and/or indirectly with the front-end.
 Beware that app containers are not directly connected to the front-end, and they should communicate through the controller.
 
 #### Availability of data to communicate: `app.status_available`
-Once a client wants to communicate with other clients, regardless of role, and the data is ready, by setting `app.status_available` as `True`, the app instance sends the signal to the controller to execute the communication. Generally, this attribute will be used for [communication methods](#communication-methods) and automatically handled by the FeatureCloud app.
+Once a client wants to communicate with other clients, regardless of role, and the data is ready, by setting 
+`app.status_available` as `True`, the app instance sends the signal to the controller to execute the communication. Generally, this attribute will be used for [communication methods](#communication-methods) and automatically handled by the FeatureCloud app.
 
 #### Termination of app execution: `app.status_finished
 The app instance can set `app.status_finished` attribute as `True` to signal the controller that app execution is finished.
@@ -136,7 +143,8 @@ Once there is a specific massage, e.g., the occurrence of some semantic errors, 
 to inform the end-user in front-end.  For sending messages to front-end, developers can use [`app.update`](#updating-local-app-status-update).
 
 #### Overall progress of app: `app.status_progress`
-During the run, app execution progress can be quantified based on different factors. Developers can quantify the app progress in the range of zero to one and share it with end-user through the front-end using [`app.update`](#updating-local-app-status-update).
+During the run, app execution progress can be quantified based on different factors. Developers can quantify the app
+progress in the range of zero to one and share it with end-user through the front-end using [`app.update`](#updating-local-app-status-update).
 
 #### Operational state of the app: `app.status_state`
 During the app run, different [operational states](#operational-states) can be reported to the end-user using [`app.update`](#updating-local-app-status-update).
@@ -160,7 +168,8 @@ The FeatureCloud app includes various methods that not only provides
 the ability to flexibly incorporate different states into the app but also work as part of the [verification mechanism](#verification-mechanism).
 
 #### Registering all transitions: `app.register()`
-Once all the states are registered and ready to run, `app.register()` should be called to register all the transitions. This is one part of [Verification mechanism](#verification-mechanism). 
+Once all the states are registered and ready to run, `app.register()` should be called to register all the transitions. 
+This is one part of [Verification mechanism](#verification-mechanism). 
 
 #### Registering a state: `_register_state(self, name, state, participant, coordinator, **kwargs)`
 Once the state is submitted by calling [app_state](#registering-states-to-the-app-app_state), `_register_state` will be
@@ -172,7 +181,8 @@ automatically called to instantiate the state class and assign the roles and nam
 + coordinator: a boolean flag that indicates whether the coordinator is allowed to enter the state or not.
 
 #### Registering a transition: `register_transition(self, name, source, target, participant, coordinator)`
-It has a similar application as `_register_state` except it registers states. It receives the names of source and target states and registers a transition between them. Meanwhile, it checks the logic and raises `RuntimeError` if apps try to register a
+It has a similar application as `_register_state` except it registers states. It receives the names of source and 
+target states and registers a transition between them. Meanwhile, it checks the logic and raises `RuntimeError` if apps try to register a
 transitions with contradicting roles.
 
 ### Execution methods
@@ -194,7 +204,8 @@ Prints a log message or raises an exception according to the [log level](#log-le
 ## AppState: Defining Custom States
 To Support all sorts of operations and communications, FeatureCloud's engine package includes `AppState` 
 class. It is an abstract class that requires App-developers to extend it by defining its [abstract methods](#abstract-methods).
-Sates will be assigned to clients with specific roles, and the FeatureCloud app will verify all states and their corresponding transitions based on these predefined roles. In this way, 
+Sates will be assigned to clients with specific roles, and the FeatureCloud app will verify all states and their
+corresponding transitions based on these predefined roles. In this way, 
 the app's logic can be verified before deploying it(more on this [here](#verification-mechanism)). Each state
 should have a unique name that, by default, will be used for naming transitions. Also, for roles, developers
 should set `participant` and `coordinator` attributes(which we strongly recommend to use [`app_state`](#registering-states-to-the-app-app_state) handler).  
@@ -212,7 +223,8 @@ Therefore, app developers should consider data type and structure when they comm
 The data may not be in the same structure or type as they were sent out.
 
 ### Abstract methods
-For developing apps in FeatureCloud, developers need to extend `AppState` class to define their states. And for implementing new states, developers are only required to implement two abstract methods, `register` and `run`, which are responsible
+For developing apps in FeatureCloud, developers need to extend `AppState` class to define their states. And for
+implementing new states, developers are only required to implement two abstract methods, `register` and `run`, which are responsible
 to register transitions and execute local computations, respectively.
 
 #### Registering transitions: `register(self)`
@@ -235,7 +247,8 @@ It will be called in [`app.run()`](#executing-states-computation-run) method so 
 Generally, each state can communicate with other clients through different communication methods.
 
 #### Aggregating clients data: `aggregate_data` 
-This method automatically handles SMPC usage and serialization and always returns the aggregated data. Aggregated data contains the same data structure and shape as the one was sent out by each of the clients because it was summed up element-wise. Therefore,
+This method automatically handles SMPC usage and serialization and always returns the aggregated data. Aggregated data 
+contains the same data structure and shape as the one was sent out by each of the clients because it was summed up element-wise. Therefore,
 to have structural data consistency, it considers SMPC usage as follows:
 - Using SMPC: waits to receive the aggregated data from SMPC modules, it looks like waiting for just one client.
 - Without SMPC: waits to receive all client's data, then internally aggregates them.
@@ -286,7 +299,8 @@ Updates the status of the instance app for the front-end application. It can be 
 
 ## Registering states to the app: `app_state`
 Once FC app developers want to integrate their newly defined states, they can use `app_state`. FeatureCloud app
-will always be instantiated in the `FeatureCloud.engine` package to be used by different modules. Each state should be defined for at least one participant or coordinator role. In case states require any specific arguments, they should be sent by the `app_state` function.
+will always be instantiated in the `FeatureCloud.engine` package to be used by different modules. Each state should be
+defined for at least one participant or coordinator role. In case states require any specific arguments, they should be sent by the `app_state` function.
 For instance, to register the `initial` state with the constant role of `BOTH` and `app_name` as a state-specific argument,
 we can use `app_state` as follows:
 
@@ -301,7 +315,8 @@ This will automatically register `ExampleState` as the first state by the name o
 ### Automatic Handling of config files, I/O paths, and splits
 FeatureCloud Engine provides FeatureCloud app developers with a basic `AppState` class to define custom states. `AppState`
 leaves most of the operations that could be similarly handled in different states to developers. It supports maximum flexibility
-by imposing minimum restrictions. For instance, in `Appstate` there is no path for input data, and developers should handle finding them in `/mnt/input` directory inside the docker container. But in our custom
+by imposing minimum restrictions. For instance, in `Appstate` there is no path for input data, and developers should
+handle finding them in `/mnt/input` directory inside the docker container. But in our custom
 stated, we will transparently make them available for developers, which entails them to follow specific conventions and formats
 to develop their apps.
 
@@ -316,7 +331,9 @@ Many of FeatureCloud apps expect to have input files, `config.yml` file, and out
 should be copied into the same directory inside the docker container to be accessed by the app. To facilitate the I/O process 
 `ConfigState` defines methods to automatically find the paths to all input and output files considering the logic(data splits).
 Accordingly, it stores values in app internal dictionary for  `smpc_used`, `splits`', `input_files`, and `output_files`.
-It is meant to use `ConfigState` for defining just one state, the `initial` one, first one, to set up all the required values for all following states in the app. `ConfigState` should be used in an app that all other states are defined based on `GeneralState` because it provides paths and splits required in other states to process the data.
+It is meant to use `ConfigState` for defining just one state, the `initial` one, first one, to set up all the required 
+values for all following states in the app. `ConfigState` should be used in an app that all other states are defined 
+based on `GeneralState` because it provides paths and splits required in other states to process the data.
 
 #### def lazy_init()
 After defining the state, for adding new key-value pairs into the app internal, this method should be called inside the run method
