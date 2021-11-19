@@ -7,8 +7,8 @@ from .app import LogLevel
 
 class State(AppState):
     """
-    an abstract class to handle paths to in/output files regrading different data splits.
-
+    An abstract class to handle paths to in/output files regarding different data splits.
+    
     Attributes
     ----------
     app_name: str
@@ -48,7 +48,15 @@ class State(AppState):
         self.app_name = app_name
 
     def lazy_init(self):
-        """ add new kew-value pairs into the app internal so they can be accessible for other states.
+        """ Add new key-value pairs into the `app-internal` dictionary, shared memory between states so that they can be accessible for other states.
+            
+            Keys:
+            
+            `use_smpc`: User-preference on using SMPC.
+            `splits`: names of splits(it should be the same for all data).
+            `input_files`: paths to all input files regarding the data splits.
+            `output_files`: paths to all output files regarding the data splits.
+            
         """
         # For Practical checking either SMPC was used or not.
         self.app.internal['smpc_used'] = False
@@ -62,7 +70,7 @@ class State(AppState):
     def read_config(self):
         """ Read config.yml file
             it looks for `mode` and `dir` in `logic` part of the file,
-            if dose not exist, default values will be used
+            if it does not exist, default values will be used.
         """
         self.config = bios.read(self.config_file)[self.app_name]
         if 'debug' in self.config:
@@ -81,9 +89,9 @@ class State(AppState):
                          f"dir: '.'", LogLevel.DEBUG)
 
     def finalize_config(self):
-        """ Generates split names, paths to input and output files.
-            Regarding the `mode` of the app, there should be some splits for data
-            and for each data, different splits should be processed
+        """  Generates split names, paths to input and output files.
+             Regarding the `mode` of the app, there should be some splits for data,
+             and for each data, different splits should be processed.
         """
         if self.mode == "directory":
             splits = [f.path for f in os.scandir(f'{self.input_dir}/{self.dir}') if f.is_dir()]
