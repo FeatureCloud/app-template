@@ -39,6 +39,7 @@ For reporting the situation for the front-end app, so end-users be aware of it, 
 Operational states | 'running' | 'error' | 'action_required' 
 --- | --- | --- | --- |
 Constants | RUNNING | ERROR | ACTION | 
+Interpretation | the app is functioning normally |  app execution is interrupted with an error and cannot recover from it | demands end-users ’ intervention in interactive apps|
  
 FeatureCloud app developers can use these pre-defined values for updating the front-end for end-users.
 
