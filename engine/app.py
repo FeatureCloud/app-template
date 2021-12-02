@@ -95,6 +95,7 @@ class App:
     transition()
     log()
     """
+
     def __init__(self):
         self.id = None
         self.coordinator = None
@@ -117,7 +118,8 @@ class App:
 
         self.current_state: Union[AppState, None] = None
         self.states: Dict[str, AppState] = {}
-        self.transitions: Dict[str, Tuple[AppState, AppState, bool, bool]] = {}  # name => (source, target, participant, coordinator)
+        self.transitions: Dict[
+            str, Tuple[AppState, AppState, bool, bool]] = {}  # name => (source, target, participant, coordinator)
         self.transition_log: List[Tuple[datetime.datetime, str]] = []
 
         self.internal = {}
@@ -365,6 +367,7 @@ class AppState(abc.ABC):
     update(message, progress, state)
 
     """
+
     def __init__(self):
         self.app = None
         self.name = None
@@ -545,7 +548,8 @@ class AppState(abc.ABC):
         if send_to_self:
             self.app.data_incoming.append((data, self.app.id))
 
-    def configure_smpc(self, exponent: int = 8, shards: int = 0, operation: SMPCOperation = SMPCOperation.ADD, serialization: SMPCSerialization = SMPCSerialization.JSON):
+    def configure_smpc(self, exponent: int = 8, shards: int = 0, operation: SMPCOperation = SMPCOperation.ADD,
+                       serialization: SMPCSerialization = SMPCSerialization.JSON):
         """
         Configures successive usage of SMPC aggregation performed in the FeatureCloud controller.
 
@@ -566,7 +570,8 @@ class AppState(abc.ABC):
         self.app.default_smpc['operation'] = operation.value
         self.app.default_smpc['serialization'] = serialization.value
 
-    def update(self, message: Union[str, None] = None, progress: Union[float, None] = None, state: Union[State, None] = None):
+    def update(self, message: Union[str, None] = None, progress: Union[float, None] = None,
+               state: Union[State, None] = None):
         """
         Updates information about the execution.
 
@@ -589,6 +594,36 @@ class AppState(abc.ABC):
         self.app.status_message = message
         self.app.status_progress = progress
         self.app.status_state = state.value if state else None
+
+    def remember(self, key, value=None):
+        """ To share data among different AppState instances
+            setting value as None means retrieving the remembered key.
+            Otherwise, the value will be remembered by the key.
+
+        Parameters
+        ----------
+        key:
+            a key to remember
+        value:
+            a value to remember
+
+        Returns
+        -------
+        value:
+            Once the key exist and value is None,
+            the stored value for key will be retrieved
+            Once the value is no None,
+            it will be stored and remembered by the key,
+            and True will be returned to queue the successful operation.
+
+        """
+        if value is None:
+            if key in self.app.internal:
+                return self.app.internal[key]
+            self.app.log(f"There is no {key} in the shared memory", LogLevel.ERROR)
+            return False
+        self.app.internal[key] = value
+        return True
 
 
 def app_state(name: str, role: Role = Role.BOTH, app_instance: Union[App, None] = None, **kwargs):
