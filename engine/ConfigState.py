@@ -50,11 +50,7 @@ class State(AppState):
     def lazy_init(self):
         """ add new kew-value pairs into the app internal so they can be accessible for other states.
         """
-        # For Practical checking either SMPC was used or not.
         self.app.internal['smpc_used'] = False
-        # use_smpc as functions' argument are for app-developers to declare their decision in specific.
-        # self.config['use_smpc'] is the end-user preference that can be regarded or ignored by developers.
-
         self.app.internal['splits'] = set()
         self.app.internal['input_files'] = {}
         self.app.internal['output_files'] = {}
