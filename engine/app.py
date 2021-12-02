@@ -52,7 +52,7 @@ class SMPCType(TypedDict):
 
 
 class App:
-    """ Implementing the workflow for FeatureCloud platform
+    """ Implementing the workflow for the FeatureCloud platform.
 
     Attributes
     ----------
@@ -132,8 +132,8 @@ class App:
                 pass
 
     def handle_setup(self, client_id, coordinator, clients):
-        """ is called once upon startup and contains information about the execution context of this instance.
-            and registers all of the the states.
+        """ It will be called on startup and contains information about the 
+            execution context of this instance. And registers all of the states.
 
 
         Parameters
@@ -174,7 +174,7 @@ class App:
     def run(self):
         """    Runs the workflow, logs the current state, executes it,
                and handles the transition to the next desired state.
-               once the app transits to the terminal state, the workflow will be terminated.
+               Once the app transits to the terminal state, the workflow will be terminated.
 
        """
         while True:
@@ -192,7 +192,7 @@ class App:
 
     def register(self):
         """ Registers all of the states transitions
-            it should be called once all of sates are registered.
+            it should be called once all of the states are registered.
 
         """
         for s in self.states:
@@ -200,7 +200,8 @@ class App:
             state.register()
 
     def handle_incoming(self, data, client):
-        """ when new data arrives, it appends it to data_incoming attribute to be accessible for app states.
+        """ When new data arrives, it appends it to the
+            `data_incoming` attribute to be accessible for app states.
 
         Parameters
         ----------
@@ -232,7 +233,7 @@ class App:
         return data[0]
 
     def _register_state(self, name, state, participant, coordinator, **kwargs):
-        """ instantiates a state, provide app level information for it, and add it as part of the app workflow.
+        """ Instantiates a state, provides app-level information and adds it as part of the app workflow.
 
         Parameters
         ----------
@@ -253,9 +254,9 @@ class App:
         self.states[si.name] = si
 
     def register_transition(self, name: str, source: str, target: str, participant=True, coordinator=True):
-        """ Receives transition registration parameters, check validity of its logic, and consider it as one
-            possible transitions in the workflow.
-            There will exceptions if apps try to register a transitions with contradicting roles.
+        """ Receives transition registration parameters, check the validity of its logic,
+            and consider it as one possible transitions in the workflow.
+            There will be exceptions if apps try to register a transition with contradicting roles.
 
         Parameters
         ----------
@@ -296,13 +297,14 @@ class App:
         self.transitions[name] = (source_state, target_state, participant, coordinator)
 
     def transition(self, name):
-        """ Transits the app workflow to the unique next state based on current states, the role FeatureCloud client,
-            and requirements of registered transitions for current state.
+        """ Transits the app workflow to the unique next state based on
+            current states, the role of the FeatureCloud client,
+            and requirements of registered transitions for the current state.
 
         Parameters
         ----------
         name: str
-            Name of the transition(which includes name of current and the next state)
+            Name of the transition(which includes name of current and the next state).
 
         """
         transition = self.transitions.get(name)
