@@ -72,7 +72,7 @@ class App:
 
     data_incoming: list
     data_outgoing: list
-    thread:
+    thread: threading.Thread
 
     states: Dict[str, AppState]
     transitions: Dict[str, Tuple[AppState, AppState, bool, bool]]
@@ -101,7 +101,7 @@ class App:
         self.coordinator = None
         self.clients = None
 
-        self.thread = None
+        self.thread: Union[threading.Thread, None] = None
 
         self.status_available: bool = False
         self.status_finished: bool = False
@@ -595,35 +595,31 @@ class AppState(abc.ABC):
         self.app.status_progress = progress
         self.app.status_state = state.value if state else None
 
-    def remember(self, key, value=None):
-        """ To share data among different AppState instances
-            setting value as None means retrieving the remembered key.
-            Otherwise, the value will be remembered by the key.
+    def store(self, key: str, value):
+        """ Store allows to share data across different AppState instances.
 
         Parameters
         ----------
-        key:
-            a key to remember
+        key: str
         value:
-            a value to remember
+
+        """
+        self.app.internal[key] = value
+
+    def load(self, key: str):
+        """ Load allows to access data shared across different AppState instances.
+
+        Parameters
+        ----------
+        key: str
 
         Returns
         -------
         value:
-            Once the key exist and value is None,
-            the stored value for key will be retrieved
-            Once the value is no None,
-            it will be stored and remembered by the key,
-            and True will be returned to queue the successful operation.
+            Value stored previously using store
 
         """
-        if value is None:
-            if key in self.app.internal:
-                return self.app.internal[key]
-            self.app.log(f"There is no {key} in the shared memory", LogLevel.ERROR)
-            return False
-        self.app.internal[key] = value
-        return True
+        return self.app.internal.get(key)
 
 
 def app_state(name: str, role: Role = Role.BOTH, app_instance: Union[App, None] = None, **kwargs):
