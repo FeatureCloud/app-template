@@ -249,7 +249,7 @@ class App:
             self.log(f'state {name} already exists', level=LogLevel.FATAL)
 
         si = state(**kwargs)
-        si.app = self
+        si._app = self
         si.name = name
         si.participant = participant
         si.coordinator = coordinator
@@ -322,25 +322,6 @@ class App:
         self.transition_log.append((datetime.datetime.now(), name))
         self.current_state = transition[1]
 
-    def log(self, msg, level: LogLevel = LogLevel.DEBUG):
-        """
-        Prints a log message or raises an exception according to the log level.
-
-        Parameters
-        ----------
-        msg : str
-            message to be displayed
-        level : LogLevel, default=LogLevel.DEBUG
-            determines the channel (stdout, stderr) or whether to trigger an exception
-        """
-
-        if level == LogLevel.FATAL:
-            raise RuntimeError(msg)
-        if level == LogLevel.ERROR:
-            print(msg, flush=True, file=sys.stderr)
-        else:
-            print(msg, flush=True)
-
 
 class AppState(abc.ABC):
     """ Defining custom states
@@ -369,7 +350,7 @@ class AppState(abc.ABC):
     """
 
     def __init__(self):
-        self.app = None
+        self._app = None
         self.name = None
         self.participant = None
         self.coordinator = None
@@ -391,6 +372,18 @@ class AppState(abc.ABC):
 
         """
 
+    @property
+    def is_coordinator(self):
+        return self._app.coordinator
+
+    @property
+    def clients(self):
+        return self._app.clients
+
+    @property
+    def id(self):
+        return self._app.id
+
     def register_transition(self, target: str, role: Role = Role.BOTH, name: str or None = None):
         """
         Registers a transition in the state machine.
@@ -408,7 +401,7 @@ class AppState(abc.ABC):
         if not name:
             name = target
         participant, coordinator = role.value
-        self.app.register_transition(f'{self.name}_{name}', self.name, target, participant, coordinator)
+        self._app.register_transition(f'{self.name}_{name}', self.name, target, participant, coordinator)
 
     def aggregate_data(self, operation: SMPCOperation, use_smpc=False):
         """
@@ -446,9 +439,9 @@ class AppState(abc.ABC):
         list of n data pieces, where n is the number of participants
         """
 
-        if not self.app.coordinator:
-            self.app.log('must be coordinator to use gather_data', level=LogLevel.FATAL)
-        return self.await_data(len(self.app.clients), unwrap=False, is_json=is_json)
+        if not self._app.coordinator:
+            self._app.log('must be coordinator to use gather_data', level=LogLevel.FATAL)
+        return self.await_data(len(self._app.clients), unwrap=False, is_json=is_json)
 
     def await_data(self, n: int = 1, unwrap=True, is_json=False):
         """
@@ -469,9 +462,9 @@ class AppState(abc.ABC):
         """
 
         while True:
-            if len(self.app.data_incoming) >= n:
-                data = self.app.data_incoming[:n]
-                self.app.data_incoming = self.app.data_incoming[n:]
+            if len(self._app.data_incoming) >= n:
+                data = self._app.data_incoming[:n]
+                self._app.data_incoming = self._app.data_incoming[n:]
                 if n == 1 and unwrap:
                     return _deserialize_incoming(data[0][0], is_json=is_json)
                 else:
@@ -492,13 +485,13 @@ class AppState(abc.ABC):
 
         data = _serialize_outgoing(data, is_json=False)
 
-        if destination == self.app.id:
-            self.app.data_incoming.append((data, self.app.id))
+        if destination == self._app.id:
+            self._app.data_incoming.append((data, self._app.id))
         else:
-            self.app.data_outgoing.append((data, False, destination))
-            self.app.status_destination = destination
-            self.app.status_smpc = None
-            self.app.status_available = True
+            self._app.data_outgoing.append((data, False, destination))
+            self._app.status_destination = destination
+            self._app.status_smpc = None
+            self._app.status_available = True
 
     def send_data_to_coordinator(self, data, send_to_self=True, use_smpc=False):
         """
@@ -516,14 +509,14 @@ class AppState(abc.ABC):
 
         data = _serialize_outgoing(data, is_json=use_smpc)
 
-        if self.app.coordinator and not use_smpc:
+        if self._app.coordinator and not use_smpc:
             if send_to_self:
-                self.app.data_incoming.append((data, self.app.id))
+                self._app.data_incoming.append((data, self._app.id))
         else:
-            self.app.data_outgoing.append((data, use_smpc, None))
-            self.app.status_destination = None
-            self.app.status_smpc = self.app.default_smpc if use_smpc else None
-            self.app.status_available = True
+            self._app.data_outgoing.append((data, use_smpc, None))
+            self._app.status_destination = None
+            self._app.status_smpc = self._app.default_smpc if use_smpc else None
+            self._app.status_available = True
 
     def broadcast_data(self, data, send_to_self=True):
         """
@@ -539,14 +532,14 @@ class AppState(abc.ABC):
 
         data = _serialize_outgoing(data, is_json=False)
 
-        if not self.app.coordinator:
-            self.app.log('only the coordinator can broadcast data', level=LogLevel.FATAL)
-        self.app.data_outgoing.append((data, False, None))
-        self.app.status_destination = None
-        self.app.status_smpc = None
-        self.app.status_available = True
+        if not self._app.coordinator:
+            self._app.log('only the coordinator can broadcast data', level=LogLevel.FATAL)
+        self._app.data_outgoing.append((data, False, None))
+        self._app.status_destination = None
+        self._app.status_smpc = None
+        self._app.status_available = True
         if send_to_self:
-            self.app.data_incoming.append((data, self.app.id))
+            self._app.data_incoming.append((data, self._app.id))
 
     def configure_smpc(self, exponent: int = 8, shards: int = 0, operation: SMPCOperation = SMPCOperation.ADD,
                        serialization: SMPCSerialization = SMPCSerialization.JSON):
@@ -565,10 +558,10 @@ class AppState(abc.ABC):
             serialization to be used for the data
         """
 
-        self.app.default_smpc['exponent'] = exponent
-        self.app.default_smpc['shards'] = shards
-        self.app.default_smpc['operation'] = operation.value
-        self.app.default_smpc['serialization'] = serialization.value
+        self._app.default_smpc['exponent'] = exponent
+        self._app.default_smpc['shards'] = shards
+        self._app.default_smpc['operation'] = operation.value
+        self._app.default_smpc['serialization'] = serialization.value
 
     def update(self, message: Union[str, None] = None, progress: Union[float, None] = None,
                state: Union[State, None] = None):
@@ -586,14 +579,14 @@ class AppState(abc.ABC):
         """
 
         if message and len(message) > 40:
-            self.app.log('message is too long (max: 40)', level=LogLevel.FATAL)
+            self._app.log('message is too long (max: 40)', level=LogLevel.FATAL)
         if progress is not None and (progress < 0 or progress > 1):
-            self.app.log('progress must be between 0 and 1', level=LogLevel.FATAL)
+            self._app.log('progress must be between 0 and 1', level=LogLevel.FATAL)
         if state is not None and state != State.RUNNING and state != State.ERROR and state != State.ACTION:
-            self.app.log('invalid state', level=LogLevel.FATAL)
-        self.app.status_message = message
-        self.app.status_progress = progress
-        self.app.status_state = state.value if state else None
+            self._app.log('invalid state', level=LogLevel.FATAL)
+        self._app.status_message = message
+        self._app.status_progress = progress
+        self._app.status_state = state.value if state else None
 
     def store(self, key: str, value):
         """ Store allows to share data across different AppState instances.
@@ -604,7 +597,7 @@ class AppState(abc.ABC):
         value:
 
         """
-        self.app.internal[key] = value
+        self._app.internal[key] = value
 
     def load(self, key: str):
         """ Load allows to access data shared across different AppState instances.
@@ -619,7 +612,26 @@ class AppState(abc.ABC):
             Value stored previously using store
 
         """
-        return self.app.internal.get(key)
+        return self._app.internal.get(key)
+
+    def log(self, msg, level: LogLevel = LogLevel.DEBUG):
+        """
+        Prints a log message or raises an exception according to the log level.
+
+        Parameters
+        ----------
+        msg : str
+            message to be displayed
+        level : LogLevel, default=LogLevel.DEBUG
+            determines the channel (stdout, stderr) or whether to trigger an exception
+        """
+
+        if level == LogLevel.FATAL:
+            raise RuntimeError(msg)
+        if level == LogLevel.ERROR:
+            print(msg, flush=True, file=sys.stderr)
+        else:
+            print(msg, flush=True)
 
 
 def app_state(name: str, role: Role = Role.BOTH, app_instance: Union[App, None] = None, **kwargs):
