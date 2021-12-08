@@ -322,6 +322,26 @@ class App:
         self.transition_log.append((datetime.datetime.now(), name))
         self.current_state = transition[1]
 
+    def log(self, msg, level: LogLevel = LogLevel.DEBUG):
+        """
+        Prints a log message or raises an exception according to the log level.
+
+        Parameters
+        ----------
+        msg : str
+            message to be displayed
+        level : LogLevel, default=LogLevel.DEBUG
+            determines the channel (stdout, stderr) or whether to trigger an exception
+        """
+
+        msg = f'[Time: {datetime.datetime.now().strftime("%d.%m.%y %H:%M:%S")}] [Level: {level.value}] {msg}'
+
+        if level == LogLevel.FATAL:
+            raise RuntimeError(msg)
+        if level == LogLevel.ERROR:
+            print(msg, flush=True, file=sys.stderr)
+        else:
+            print(msg, flush=True)
 
 class AppState(abc.ABC):
     """ Defining custom states
@@ -626,12 +646,7 @@ class AppState(abc.ABC):
             determines the channel (stdout, stderr) or whether to trigger an exception
         """
 
-        if level == LogLevel.FATAL:
-            raise RuntimeError(msg)
-        if level == LogLevel.ERROR:
-            print(msg, flush=True, file=sys.stderr)
-        else:
-            print(msg, flush=True)
+        self._app.log(f'[State: {self.name}] {msg}')
 
 
 def app_state(name: str, role: Role = Role.BOTH, app_instance: Union[App, None] = None, **kwargs):
