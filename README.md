@@ -14,10 +14,6 @@ should define their states and register them to the default app.
 For defining new states, in general, developers can use [`AppState`](engine/README.md#appstate-defining-custom-states)
 which supports different communications, transitions, logging, and operations.
 
-Meanwhile, FeatureCloud engine provide developers with [`ConfigSate`](engine/README.md#configstate) class that should be 
-used as the initial state which handles readinng the config file, and providing paths for different input and output files 
-with considering different data splits.
-
 #### AppState
 [`AppState`](engine/README.md#appstate-defining-custom-states) is the building block of FeatureCloud apps that covers
 all the scenarios with the verifying mechanism. Each state of 
@@ -31,17 +27,13 @@ and transition to other ones.
 by returning the name of the next state.
 
 
-#### ConfigSate
-[`ConfigSate`](engine/README.md#configstate) can be optionally used as the first state, `initial` state, in the app which reads the config file and interprets it to provide necessary information
-for following states to facilitate data I/O, splits, and serialization. 
-
 ### Registering apps
 For each state, developers should extend one of the abstract states and call the helper function to automatically register
 the state in the default FeatureCloud app:
 
 ```angular2html
 @app_state(name='initial', role=Role.BOTH, app_name='example')
-class ExampleState(ConfigState.State):
+class ExampleState(AppState):
     def register(self):
         self.register_transition('terminal', Role.BOTH)
 
@@ -122,9 +114,7 @@ And the rest should be all other app required libraries.
 
 ##### config.yml
 Each app may need some hyper-parameters or arguments that should be provided by the end-users. Such data should be included
-in [`config.yml`](apps/README.md#config-file) which should be read and interpreted by the app. [`ConfigState`](engine/README.md#configstate)
-could handle part of the job and exemplify how to deal with the config file.
-
+in [`config.yml`](apps/README.md#config-file) which should be read and interpreted by the app. 
 
 ### References
 <a id="1">[1]</a> 
