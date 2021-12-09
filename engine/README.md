@@ -158,10 +158,11 @@ will be accordingly and automatically handled by app instance.
 App developers can decide which parameters should be used SMPC aggregation, and they can inform the controller about the 
 aconfiguraion using [`app.configure_smpc`](#configuring-smpc-module-configure_smpc).
 
-### Shared memory for states: `app.internal`
+### Shared memory for states: `_app.internal`
 Different states can be defined and registered to the app, and they may need to pass data to each other. To support a shared memory
 between different states, `App` class has `internal` attribute, which is a dictionary that can be accessed through 
-`self.app.iternal` in each state.
+`self._app.iternal` in each state. However, `app` instance is a private attribute for `AppState` and should not be accessed
+directly. Thereby, `load` and `store` methods are introduced to `AppState` class to cover sharing data among different states.
 
 ### Registration methods
 The FeatureCloud app includes various methods that not only provides 
@@ -281,6 +282,33 @@ to employ SMPC for securing the aggregation or not by setting `use_smpc` flag.
 #### Broadcasting data: `broadcast_data`
 This should only be called for the coordinator to broadcasts data to all clients.
 
+
+### Shared memory methods
+Even though all states will be run in the same container and inherited from the same class, they need to have a shared memory
+so developers can easily transfer some local data from one state to another. These data can be either fixed, e.g., 
+information about clients' id, or dynamic, results of computations applied on the local data. Either way, the data is 
+located inside the unique `app` instance, which is a private member, and there are predefined methods and properties in 
+`AppState` to handle it.
+#### Sharing data with other states: `store`
+Once developers want to transfer data from one state to another they can call `store` method and provide `key` argument,
+to assign a name to the data part, and `value` argument for the data. `store` updates the shared memory by adding `key` to hold
+'value'. Beware that if `key` exists, it will be overridden by `store`. There are no restriction on `value`.
+#### Retrieving shared data from other states: `load`
+Once developers want to access an specific shared data on the shared memory, all they need is corresponding `key` and 
+calling `load` method to search the shared memory for it and return the value if it exists. In case no `key` being found,
+app execution will be interrupted.
+#### Checking the role of app: `coordinator`
+In many scenarios developers may condition their decisions on the role of the target app instance. For example, some transitions 
+may be exclusive to coordinator, and should be taken only on the app instance with the coordinator role. Accordingly, coordinator 
+property in `AppSatate` will check the role and return `True` only if the app instance role is coordinator; otherwise it will return `False`.
+#### Checking the clients' ID
+Each app has a unique ID which will be shared with other participants in a federated workflow. In case, a state needs
+to communicate data to a specific client, it can use `clients` property to get a list of clients IDs. Developers can get the 
+ID of target app instance using `id` property of `AppState`. This can be helpful to distinguish between target app instances ID 
+from others.
+
+
+
 ### Other methods 
 
 #### Registering a specific transition for state: `register_transition`
@@ -319,7 +347,7 @@ in app level, ever
 ## app instance
 Different parts of the FeatureCloud library should use the same instance of the `App` class. These parts are as follows:
 - States: each state may need to be aware of the [Role](#roles) for carrying on different operations and have access to the app's 
-[`internal`](#shared-memory-for-states-appinternal) for data from other states. Therefore, the same app instance should be used for registering the states.
+[`internal`](#shared-memory-for-states-app_internal) for data from other states. Therefore, the same app instance should be used for registering the states.
 - api: In the `api` package, through the `bottle` library, the controller informs the app instance about its role, its ID, and ID of other
 clients. The same app instance should be used for that purpose too.
 
