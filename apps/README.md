@@ -37,41 +37,26 @@ Also,this name will appear as the main key in `config.yml` file.
 ### Config file
 Each app has some input hyper-parameters that brings some flexibility to end-users for executing it on different data or settings.
 Such parameters should be included in a config file conventionally named `config.yml`. To inform end-users about the hyper-parameters
-and corresponding value options, app-developers could conventionally define `default_config` dictionary witch includes the name 
-of app as the only key, which includes a nested dictionary for parameters. Alternatively, this dictionary can be written
-into the config file directly. Beware that once apps are used ine the workflow,
+and corresponding value options, app-developers could conventionally define the config file as a dictionary witch includes the name 
+of app as the only key; the dictionary, in turn, can include nested dictionaries for parameters. Beware that once apps are used ine the workflow,
 all config files, for all apps in the workflow, should be included inside same `config.yml` file and passed from one app
 to the next one. So, to distinguish between app configs, we use their name. 
 
 ```angular2html
-default_config = {
-    'example_app': {
-        'local_dataset': {
-            'data': 'data.csv'
-            'task': 'classification',
-            'target_value': 'label',
-            'sep': ','
-        }        
-        'result': {
-            'data': 'data.csv'
-        }
-    }
-}
+example_app:
+    local_dataset:
+        data: data.csv
+        task: classification
+        target_value: label
+        sep: ,
+    result: 
+        data: data.csv
+        
 ```
 In this example there are `local_dataset` and `result` dictionaries, which can be necessary for almost all apps, while includes
 app specific details. For instance, `task`, `target_values`, and `sep` are the options of input file, which means the data
 will be related to which task, where the target_value can be found inside the file, and what is the delimiter character in
-the CSV file, respectively. Alternatively, developers can directly provide the `config.yml` file with same content as follows:
-```angular2html
-example_app:
-  local_dataset:
-    data: data.csv
-    task: classification
-    target_value: label
-    sep: ','
-  result:
-    data: data.csv
-```
+the CSV file, respectively.
 Currently, developers should explain the datatype of config options and acceptable values in their app documentation, and also,
 check the values while they process the config file. Even though each config file could include arbitrary
 key/value pairs, there are  share parts can be found in all apps. Here we cover how conventionally we can cover those parts.
@@ -88,7 +73,7 @@ the next app. Therefore, `result` is another dictionary in config file to define
 Keys are indicating the output, which helps current app to know what should be exact name of output.
 
 #### SMPC
-SMPC module can be used in discretion of app developers to straighten user-privacy. In FeatureCloud platform,
+SMPC module can be used in discretion of app developers to strengthen user-privacy. In FeatureCloud platform,
 to provides reasonable flexibility, app-developers can delegate the decision about usage of SMPC, and also, it's parameters,
 to the end-users. In that case, config file could also include `use_smpc` key with boolean value to indicate the decision of
 end-users. Beware that all clients, for specific communication, should have a consistent decision about using SMPC component.
