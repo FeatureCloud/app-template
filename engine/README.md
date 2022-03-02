@@ -259,7 +259,25 @@ aggregated results in the coordinator. Provided aggregated results are not the a
 
 #### Gathering clients data: `gather_data`
 FC app developers are allowed to call this method only for clients with the coordinator role.
-This method calls the `await_data` method to wait for receiving data of all clients.            
+This method calls the `await_data` method to wait for receiving data of all clients. 
+The gathered data will be in a list which includes the data of each client. In case there be more than data part shared by
+each client, one solution to access related data is looping over the clients data and access the relative data part on different clients.
+For instance, for two clients A and B:
+A sends out:
+
+`data_to_send = [[1, 2, 3], "test_A"]`
+
+while client B sends:
+
+`data_to_send = [[5, 6], "test_B"]`
+
+the coordinator can aggregate the data as follows:
+```angular2html
+clients_lists, clients_str = [], []
+for clients_data in self.gather_data():
+    clients_lists.append(clients_data[0])
+    clients_str.append(clients_data[1])
+```
 
 #### Waiting to receive data: `await_data`
 For receiving data from `n` clients, it can be called. It polls for data arrival every `DATA_POLL_INTERVAL` seconds, 
