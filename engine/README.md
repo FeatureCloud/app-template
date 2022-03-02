@@ -256,6 +256,9 @@ to have structural data consistency, it considers SMPC usage as follows:
 
 Accordingly, FeatureCloud app developers no longer are required to consider SMPC usage because they always get the same
 aggregated results in the coordinator. Provided aggregated results are not the average ones; therefore, they need to be averaged, if it's apt to, separately.
+If different data parts being sent by clients, using `aggregate_data` maybe troublesome because those data parts may vary in dimension and 
+data type. Hence, in such scenarios, developers can use `gather_data` to have access to the same data part of different clients 
+and pass them to `_aggregate` method separately to get the aggregated values.
 
 #### Gathering clients data: `gather_data`
 FC app developers are allowed to call this method only for clients with the coordinator role.
